@@ -10,7 +10,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $allUsers = User::all();
+        $allUsers = User::with(['wishlists.product'])->get();
         return response()->json(
             [
                 'valid' => true,
@@ -23,7 +23,6 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-     
         $validator = Validator::make($request->all(), [
             'first_name'  => ['required', 'string'],
             'last_name' => ['required', 'string'],
