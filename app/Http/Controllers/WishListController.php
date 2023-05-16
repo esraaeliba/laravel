@@ -1,65 +1,87 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\Wishlist;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+
+use App\Wishlist\Wishlist;
+use App\Models\Product;
 
 class WishListController extends Controller
 {
-    
-    public function index(Request $request)
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+
+     public function index()
+     {
+        return view('pages.wishlist', ['wishlist' => $this->loadWishFromSession()]);
+     }
+
+    public function __construct()
     {
-        $allWishlist = Wishlist::all();
+        $this->middleware('auth');
+    }
+
+    public function getWish()
+    {
         return response()->json(
             [
                 'valid' => true,
                 'message' => 'retrieved successfully',
-                'wishlists' => $allWishlist,
+                'wishlist' => $this->loadWishFromSession(),
             ],
             200,
-        );
+        ); 
     }
 
-    public function store(Request $request)
+    public function addToWish(Product $product)
     {
-    
-        $validator = Validator::make($request->all(), [
-            'user_id' => ['required', 'exists:users,id'],
-            'product_id' =>['required', 'exists:products,id'],
-            
-        ]);
-        if ($validator->fails()) {
-            return response()->json(
-                [
-                    'valid' => false,
-                    'message' => 'something went wrong',
-                    'errors' => $validator->errors()
-                ],
-                400,
-            );
-        }
+        $wishlist = $this->loadWishFromSession();
+        $wishlist->addProduct($product);
+        $this->saveWishToSession($wishlist);
  
-        $newWishlist = Wishlist::create($request->all());
         return response()->json(
             [
                 'valid' => true,
-                'message' => 'created successfully',
-                'wishlist' => $newWishlist,
-            ],
-            200,
-        );
-    }
-    public function destroy(Wishlist $wishlist)
-    {
-        $wishlist->delete();
-        return response()->json(
-            [
-                'valid' => true,
-                'message' => 'deleted successfully',
+                'message' => 'product added succesfully',
                 'wishlist' => $wishlist,
             ],
             200,
-        );
+        ); 
+    }
+
+    public function removeFromWish(Product $product)
+    {
+        $wishlist = $this->loadWishFromSession();
+        $wishlist->removeProduct($product);
+        $this->saveWishToSession($wishlist);
+
+        return response()->json(
+            [
+                'valid' => true,
+                'message' => 'product removed successfully',
+                'wishlist' => $wishlist,
+            ],
+            200,
+        ); 
+    }
+
+    protected function loadWishFromSession() : Wishlist
+    {
+        $wishlist = session('user_wish');
+        // check if no Wish was found in the session, we will need to create a new Wish
+        if (empty($wishlist)) {
+            $wishlist = new Wishlist();
+        }
+
+        return $wishlist;
+    }
+
+    protected function saveWishToSession(Wishlist $wishlist)
+    {
+        session([
+            'user_wish' => $wishlist
+        ]);
     }
 }

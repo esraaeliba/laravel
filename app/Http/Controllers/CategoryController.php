@@ -8,17 +8,28 @@ use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index(Request $request)
     {
-        $allCategories = Category::all();
-        return response()->json(
-            [
-                'valid' => true,
-                'message' => 'retrieved successfully',
-                'Category' => $allCategories,
-            ],
-            200,
-        );
+        $allCategories = Category::with(['products'])->get();
+        // return response()->json(
+        //     [
+        //         'valid' => true,
+        //         'message' => 'retrieved successfully',
+        //         'Category' => $allCategories,
+        //     ],
+        //     200,
+        // );
+        return view('pages.categories', ['categories' => $allCategories]);
     }
 
     public function store(Request $request)
@@ -105,4 +116,5 @@ class CategoryController extends Controller
         );
         
     }
+   
 }

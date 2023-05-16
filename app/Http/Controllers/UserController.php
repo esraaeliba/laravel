@@ -8,6 +8,16 @@ use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index(Request $request)
     {
         $allUsers = User::with(['wishlists.product'])->get();
@@ -30,6 +40,8 @@ class UserController extends Controller
             'password' => ['required', 'string'],
             'country' => ['required', 'string'],
             'address' => ['required', 'string'],
+            // 'role'=> boolean('is_admin')=>default(0)
+
             
         ]);
         if ($validator->fails()) {

@@ -1,35 +1,34 @@
-<?php
+<?php 
 
 namespace App\Http\Controllers;
-
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+ 
 class ProductController extends Controller
 {
-    public function index(Request $request)
+    
+    public function index()
     {
-        $allProducts = Product::all();
-        return response()->json(
-            [
-                'valid' => true,
-                'message' => 'retrieved successfully',
-                'products' => $allProducts,
-            ],
-            200,
-        );
+        $products = Product::all();
+        return view ('products.index')->with('products', $products);
     }
+ 
+    public function create()
+    {
+        return view('products.create');
+    }
+
 
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string'],
             'price' => ['required', 'numeric', 'gt:0'],
-            'images' => ['required', 'array'],
-            'images.links' => ['required', 'array'],
-            'images.links.*' => ['required', 'string'],
+            'images' => ['required', 'string'],
             'category_id' => ['required', 'exists:categories,id'],
+            'description' => ['required', 'string'],
         ]);
         if ($validator->fails()) {
             return response()->json(
@@ -41,72 +40,40 @@ class ProductController extends Controller
                 400,
             );
         }
- 
+        $request->merge (['images'=>[
+                 'links'=> explode(';', $request->images)
+                ]]);
         $newProduct = Product::create($request->all());
-        return response()->json(
-            [
-                'valid' => true,
-                'message' => 'created successfully',
-                'product' => $newProduct,
-            ],
-            200,
-        );
+
+        return redirect()->route('product.index')
+                    ->with('success','Product created successfully.');
     }
 
-    public function show(Product $product)
+    public function show($id)
     {
-        return response()->json(
-            [
-                'valid' => true,
-                'message' => 'retrieved successfully',
-                'product' => $product,
-            ],
-            200,
-        );
+        $product = Product::find($id);
+        return view('products.show')->with('product', $product);
     }
-
-    public function update(Request $request, Product $product)
+ 
+   
+    public function edit($id)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => ['sometimes', 'required', 'string'],
-            'price' => ['sometimes', 'required', 'numeric', 'gt:0'],
-            'images' => ['required', 'array'],
-            'images.links' => ['required', 'array'],
-            'images.links.*' => ['required', 'string'],
-            'category_id' => ['sometimes', 'required', 'exists:categories,id'],
-        ]);
-        if ($validator->fails()) {
-            return response()->json(
-                [
-                    'valid' => false,
-                    'message' => 'something went wrong',
-                    'errors' => $validator->errors()
-                ],
-                400,
-            );
-        }
-
-        $product->update($request->all());
-        return response()->json(
-            [
-                'valid' => true,
-                'message' => 'updated successfully',
-                'product' => $product,
-            ],
-            200,
-        );
+        $product = Product::find($id);
+        return view('products.edit')->with('product', $product);
     }
-
-    public function destroy(Product $product)
+ 
+    public function update(Request $request, $id)
     {
-        $product->delete();
-        return response()->json(
-            [
-                'valid' => true,
-                'message' => 'deleted successfully',
-                'product' => $product,
-            ],
-            200,
-        );
+        $product = Product::find($id);
+        $input = $request->all();
+        $product->update($input);
+        return redirect('product')->with('flash_message', 'product Updated!');  
+    }
+ 
+   
+    public function destroy($id)
+    {
+        Product::destroy($id);
+        return redirect('product')->with('flash_message', 'product deleted!');  
     }
 }
